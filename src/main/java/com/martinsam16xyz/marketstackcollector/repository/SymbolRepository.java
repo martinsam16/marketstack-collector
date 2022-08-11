@@ -1,0 +1,2 @@
+package com.martinsam16xyz.marketstackcollector.repository;public class SymbolRepository {
+}
