@@ -1,4 +1,4 @@
-package com.martinsam16xyz.marketstackcollector.model.client;
+package com.martinsam16xyz.marketstackcollector.client.model;
 
 @lombok.Data
 public class Data {

@@ -1,1 +1,18 @@
+server:
+  port: 8080
 
+spring:
+  data:
+    mongodb:
+      uri: "mongodb+srv://${DB_USER}:${DB_PASSWORD}@marketstack.nnribsa.mongodb.net/?retryWrites=true&w=majority"
+      database: Marketstack
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 5000
+        loggerLevel: basic
+marketstack:
+  api:
+    url: http://api.marketstack.com/v1/eod
