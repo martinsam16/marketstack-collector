@@ -9,7 +9,14 @@ import reactor.core.publisher.Mono;
 @ReactiveFeignClient(value = "marketstack", url = "${marketstack.api.url}")
 public interface MarketstackApi {
 
+    @GetMapping
+    Mono<MarketstackResponse> getAll(@RequestParam("symbols") String symbols,
+                                     @RequestParam(value = "access_key") String accessKey,
+                                     @RequestParam(value = "limit") int limit);
+
     @GetMapping("/latest")
     Mono<MarketstackResponse> getLatestEod(@RequestParam("symbols") String symbols,
                                            @RequestParam(value = "access_key") String accessKey);
+
+
 }

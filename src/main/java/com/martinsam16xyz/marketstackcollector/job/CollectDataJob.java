@@ -1,8 +1,10 @@
 package com.martinsam16xyz.marketstackcollector.job;
 
 import com.martinsam16xyz.marketstackcollector.client.feign.MarketstackApi;
+import com.martinsam16xyz.marketstackcollector.client.model.MarketstackResponse;
 import com.martinsam16xyz.marketstackcollector.repository.EodRepository;
 import com.martinsam16xyz.marketstackcollector.repository.model.Eod;
+import com.martinsam16xyz.marketstackcollector.repository.model.Key;
 import com.martinsam16xyz.marketstackcollector.repository.model.Symbol;
 import com.martinsam16xyz.marketstackcollector.service.KeyManagerService;
 import com.martinsam16xyz.marketstackcollector.service.SymbolManagerService;
@@ -34,6 +36,11 @@ public class CollectDataJob {
     @Scheduled(cron = "0 0 18 * * MON-FRI", zone = "America/Lima")
     public void collectDaily() throws InterruptedException {
         log.info("Ejecutando daily collect..");
+        this.collectLatestData();
+    }
+
+    public void collectLatestData() {
+        log.info("collectLatestData()");
         symbolManagerService.findAllSymbols()
                 .map(Symbol::getSymbol)
                 .reduce((s, s2) -> s + "," + s2)
@@ -44,28 +51,65 @@ public class CollectDataJob {
                             .doOnNext(key -> {
                                 marketstackApi.getLatestEod(symbols, key.getAccessKey())
                                         .doOnNext(response -> {
-                                            response.getData().forEach(data -> {
-                                                Eod eod = modelMapper.map(data, Eod.class);
-                                                eodRepository.save(eod)
-                                                        .publishOn(Schedulers.boundedElastic())
-                                                        .doOnNext(saved -> {
-                                                            log.info("SYMBOL: " + saved.getSymbol() + ", DATE: " + saved.getDate());
-                                                            key.setUsage(key.getUsage() + 1);
-                                                            keyManagerService.save(key)
-                                                                    .doOnSuccess(success -> {
-                                                                        log.warn("key usage updated to: " + success.getUsage());
-                                                                    })
-                                                                    .subscribe();
-                                                        })
-                                                        .subscribe();
-                                            });
+                                            saveAndUpdateKeyQuote(key, response);
                                         })
                                         .subscribe();
                             })
                             .subscribe();
                 })
                 .subscribe();
+    }
 
+    public void collectAllData() {
+        log.info("collectAllData()");
+        symbolManagerService.findAllSymbols()
+                .map(Symbol::getSymbol)
+                .reduce((s, s2) -> s + "," + s2)
+                .publishOn(Schedulers.boundedElastic())
+                .doOnNext(symbols -> {
+                    keyManagerService.getkeyWithMinorUsage()
+                            .publishOn(Schedulers.boundedElastic())
+                            .doOnNext(key -> {
+                                marketstackApi.getAll(symbols, key.getAccessKey(), 1000)
+                                        .doOnNext(response -> {
+                                            saveAndUpdateKeyQuote(key, response);
+                                        })
+                                        .subscribe();
+                            })
+                            .subscribe();
+                })
+                .subscribe();
+    }
 
+    public void collectAllDataFromCustomSymbols(String symbols) {
+        log.info("collectAllDataFromCustomSymbols()");
+        keyManagerService.getkeyWithMinorUsage()
+                .publishOn(Schedulers.boundedElastic())
+                .doOnNext(key -> {
+                    marketstackApi.getAll(symbols, key.getAccessKey(), 1000)
+                            .doOnNext(response -> {
+                                saveAndUpdateKeyQuote(key, response);
+                            })
+                            .subscribe();
+                })
+                .subscribe();
+    }
+
+    private void saveAndUpdateKeyQuote(Key key, MarketstackResponse response) {
+        response.getData().forEach(data -> {
+            Eod eod = modelMapper.map(data, Eod.class);
+            eodRepository.save(eod)
+                    .publishOn(Schedulers.boundedElastic())
+                    .doOnNext(saved -> {
+                        log.info("SYMBOL: " + saved.getSymbol() + ", DATE: " + saved.getDate());
+                        key.setUsage(key.getUsage() + 1);
+                        keyManagerService.save(key)
+                                .doOnSuccess(success -> {
+                                    log.warn("key usage updated to: " + success.getUsage());
+                                })
+                                .subscribe();
+                    })
+                    .subscribe();
+        });
     }
 }
