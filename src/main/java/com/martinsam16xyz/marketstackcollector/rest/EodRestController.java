@@ -21,12 +21,27 @@ public class EodRestController {
     @GetMapping
     public Flux<Eod> all(@RequestParam int page,
                          @RequestParam int size,
-                         @RequestParam(required = false) String symbol) {
+                         @RequestParam(required = false) String symbol,
+                         @RequestParam(required = false) String date,
+                         @RequestParam(required = false) String exchange) {
         Pageable pageable = PageRequest.of(page, size);
-        if (symbol == null || symbol.isBlank())
-            return eodRepository.findAllByIdNotNull(pageable);
+        if (symbol != null && date != null && exchange != null) {
+            return eodRepository.findAllByIdNotNullAndSymbolAndDateStartingWithAndExchange(symbol, date, exchange, pageable);
+        } else if (symbol != null && date != null) {
+            return eodRepository.findAllByIdNotNullAndSymbolAndDateStartingWith(symbol, date, pageable);
+        } else if (symbol != null && exchange != null) {
+            return eodRepository.findAllByIdNotNullAndSymbolAndExchange(symbol, exchange, pageable);
+        } else if (exchange != null && date != null) {
+            return eodRepository.findAllByIdNotNullAndExchangeAndDateStartingWith(exchange, date, pageable);
+        } else if (symbol != null) {
+            return eodRepository.findAllByIdNotNullAndSymbol(symbol, pageable);
+        } else if (date != null) {
+            return eodRepository.findAllByIdNotNullAndDateStartingWith(date, pageable);
+        } else if (exchange != null) {
+            return eodRepository.findAllByIdNotNullAndExchange(exchange, pageable);
+        }
+        return eodRepository.findAllByIdNotNull(pageable);
 
-        return eodRepository.findAllByIdNotNullAndSymbol(symbol, pageable);
     }
 
 }

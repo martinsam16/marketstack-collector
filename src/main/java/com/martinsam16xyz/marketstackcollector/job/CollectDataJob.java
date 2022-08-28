@@ -50,8 +50,9 @@ public class CollectDataJob {
                             .publishOn(Schedulers.boundedElastic())
                             .doOnNext(key -> {
                                 marketstackApi.getLatestEod(symbols, key.getAccessKey())
-                                        .doOnNext(response -> {
-                                            saveAndUpdateKeyQuote(key, response);
+                                        .doOnNext(this::saveData)
+                                        .doOnSuccess(response -> {
+                                            this.updateQuota(key, symbols);
                                         })
                                         .subscribe();
                             })
@@ -71,8 +72,9 @@ public class CollectDataJob {
                             .publishOn(Schedulers.boundedElastic())
                             .doOnNext(key -> {
                                 marketstackApi.getAll(symbols, key.getAccessKey(), 1000)
-                                        .doOnNext(response -> {
-                                            saveAndUpdateKeyQuote(key, response);
+                                        .doOnNext(this::saveData)
+                                        .doOnSuccess(response -> {
+                                            this.updateQuota(key, symbols);
                                         })
                                         .subscribe();
                             })
@@ -87,29 +89,33 @@ public class CollectDataJob {
                 .publishOn(Schedulers.boundedElastic())
                 .doOnNext(key -> {
                     marketstackApi.getAll(symbols, key.getAccessKey(), 1000)
-                            .doOnNext(response -> {
-                                saveAndUpdateKeyQuote(key, response);
+                            .doOnNext(this::saveData)
+                            .doOnSuccess(response -> {
+                                this.updateQuota(key, symbols);
                             })
                             .subscribe();
                 })
                 .subscribe();
     }
 
-    private void saveAndUpdateKeyQuote(Key key, MarketstackResponse response) {
+    private void saveData(MarketstackResponse response) {
         response.getData().forEach(data -> {
             Eod eod = modelMapper.map(data, Eod.class);
             eodRepository.save(eod)
                     .publishOn(Schedulers.boundedElastic())
                     .doOnNext(saved -> {
                         log.info("SYMBOL: " + saved.getSymbol() + ", DATE: " + saved.getDate());
-                        key.setUsage(key.getUsage() + 1);
-                        keyManagerService.save(key)
-                                .doOnSuccess(success -> {
-                                    log.warn("key usage updated to: " + success.getUsage());
-                                })
-                                .subscribe();
                     })
                     .subscribe();
         });
+    }
+
+    private void updateQuota(Key key, String symbols) {
+        key.setUsage(key.getUsage() + symbols.split(",").length);
+        keyManagerService.save(key)
+                .doOnSuccess(success -> {
+                    log.warn("key usage updated to: " + success.getUsage());
+                })
+                .subscribe();
     }
 }
