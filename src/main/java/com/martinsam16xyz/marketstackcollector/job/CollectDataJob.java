@@ -50,7 +50,7 @@ public class CollectDataJob {
                             .publishOn(Schedulers.boundedElastic())
                             .doOnNext(key -> {
                                 marketstackApi.getLatestEod(symbols, key.getAccessKey())
-                                        .doOnNext(this::saveData)
+                                        .doOnNext(this::saveDataIfNotExists)
                                         .doOnSuccess(response -> {
                                             this.updateQuota(key, symbols);
                                         })
@@ -72,7 +72,7 @@ public class CollectDataJob {
                             .publishOn(Schedulers.boundedElastic())
                             .doOnNext(key -> {
                                 marketstackApi.getAll(symbols, key.getAccessKey(), 1000)
-                                        .doOnNext(this::saveData)
+                                        .doOnNext(this::saveDataIfNotExists)
                                         .doOnSuccess(response -> {
                                             this.updateQuota(key, symbols);
                                         })
@@ -89,7 +89,7 @@ public class CollectDataJob {
                 .publishOn(Schedulers.boundedElastic())
                 .doOnNext(key -> {
                     marketstackApi.getAll(symbols, key.getAccessKey(), 1000)
-                            .doOnNext(this::saveData)
+                            .doOnNext(this::saveDataIfNotExists)
                             .doOnSuccess(response -> {
                                 this.updateQuota(key, symbols);
                             })
@@ -98,15 +98,23 @@ public class CollectDataJob {
                 .subscribe();
     }
 
-    private void saveData(MarketstackResponse response) {
+    private void saveDataIfNotExists(MarketstackResponse response) {
         response.getData().forEach(data -> {
             Eod eod = modelMapper.map(data, Eod.class);
-            eodRepository.save(eod)
-                    .publishOn(Schedulers.boundedElastic())
-                    .doOnNext(saved -> {
-                        log.info("SYMBOL: " + saved.getSymbol() + ", DATE: " + saved.getDate());
-                    })
-                    .subscribe();
+            eodRepository.existsByDateAndSymbolAndExchange(eod.getDate(), eod.getSymbol(), eod.getExchange())
+                    .subscribe(exists -> {
+                        if (Boolean.FALSE == exists) {
+                            eodRepository.save(eod)
+                                    .publishOn(Schedulers.boundedElastic())
+                                    .doOnNext(saved -> {
+                                        log.info("SYMBOL: " + saved.getSymbol() + ", DATE: " + saved.getDate());
+                                    })
+                                    .subscribe();
+                        } else {
+                            log.error("[Exists!] SYMBOL: " + eod.getSymbol() + ", DATE: " + eod.getDate());
+                        }
+                    });
+
         });
     }
 

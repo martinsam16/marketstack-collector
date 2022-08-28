@@ -2,6 +2,7 @@ package com.martinsam16xyz.marketstackcollector.repository.model;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document
@@ -21,7 +22,10 @@ public class Eod {
     private Float adj_volume;
     private Float split_factor;
     private Float dividend;
+    @Indexed
     private String symbol;
+    @Indexed
     private String exchange;
+    @Indexed
     private String date;
 }
