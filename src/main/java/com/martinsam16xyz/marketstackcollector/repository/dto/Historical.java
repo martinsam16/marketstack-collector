@@ -4,9 +4,7 @@ import lombok.Data;
 @Data
 public class Historical {
     private String date;
-    private Float volume;
-    private Float open;
-    private Float close;
+    private Float value;
     private Float min;
     private Float max;
 }
