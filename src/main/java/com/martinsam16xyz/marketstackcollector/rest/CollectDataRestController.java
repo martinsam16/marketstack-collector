@@ -1,6 +1,6 @@
 package com.martinsam16xyz.marketstackcollector.rest;
 
-import com.martinsam16xyz.marketstackcollector.job.CollectDataJob;
+import com.martinsam16xyz.marketstackcollector.collector.CollectData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,20 +12,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class CollectDataRestController {
 
     @Autowired
-    CollectDataJob collectDataJob;
+    CollectData collectData;
 
     @PostMapping("/job")
     public void runJobOperation(){
-        collectDataJob.collectLatestData();
+        collectData.collectLatestData();
     }
 
     @PostMapping("/all")
     public void collectAll(){
-        collectDataJob.collectAllData();
+        collectData.collectAllData();
     }
 
     @PostMapping("/all/symbols")
     public void collectAllFromCustomSymbols(@RequestParam String symbols){
-        collectDataJob.collectAllDataFromCustomSymbols(symbols);
+        collectData.collectAllDataFromCustomSymbols(symbols);
     }
 }

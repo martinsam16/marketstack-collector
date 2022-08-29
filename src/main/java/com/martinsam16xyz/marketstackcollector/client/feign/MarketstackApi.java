@@ -12,7 +12,8 @@ public interface MarketstackApi {
     @GetMapping
     Mono<MarketstackResponse> getAll(@RequestParam("symbols") String symbols,
                                      @RequestParam(value = "access_key") String accessKey,
-                                     @RequestParam(value = "limit") int limit);
+                                     @RequestParam(value = "limit") int limit,
+                                     @RequestParam(value = "offset") int offset); //TODO call recursively to retrieve all data
 
     @GetMapping("/latest")
     Mono<MarketstackResponse> getLatestEod(@RequestParam("symbols") String symbols,

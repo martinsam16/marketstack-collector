@@ -1,4 +1,4 @@
-package com.martinsam16xyz.marketstackcollector.job;
+package com.martinsam16xyz.marketstackcollector.collector;
 
 import com.martinsam16xyz.marketstackcollector.client.feign.MarketstackApi;
 import com.martinsam16xyz.marketstackcollector.client.model.MarketstackResponse;
@@ -17,7 +17,7 @@ import reactor.core.scheduler.Schedulers;
 
 @Service
 @Slf4j
-public class CollectDataJob {
+public class CollectData {
 
     @Autowired
     private EodRepository eodRepository;
@@ -71,7 +71,7 @@ public class CollectDataJob {
                     keyManagerService.getkeyWithMinorUsage()
                             .publishOn(Schedulers.boundedElastic())
                             .doOnNext(key -> {
-                                marketstackApi.getAll(symbols, key.getAccessKey(), 1000)
+                                marketstackApi.getAll(symbols, key.getAccessKey(), 1000, 0)
                                         .doOnNext(this::saveDataIfNotExists)
                                         .doOnSuccess(response -> {
                                             this.updateQuota(key, symbols);
@@ -88,7 +88,7 @@ public class CollectDataJob {
         keyManagerService.getkeyWithMinorUsage()
                 .publishOn(Schedulers.boundedElastic())
                 .doOnNext(key -> {
-                    marketstackApi.getAll(symbols, key.getAccessKey(), 1000)
+                    marketstackApi.getAll(symbols, key.getAccessKey(), 1000, 0)
                             .doOnNext(this::saveDataIfNotExists)
                             .doOnSuccess(response -> {
                                 this.updateQuota(key, symbols);
