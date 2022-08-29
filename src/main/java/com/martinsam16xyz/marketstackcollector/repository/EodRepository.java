@@ -31,7 +31,7 @@ public interface EodRepository extends ReactiveMongoRepository<Eod, String> {
     Mono<Boolean> existsByDateAndSymbolAndExchange(String date, String symbol, String exchange);
 
     @Aggregation(pipeline = {
-            "{$sort: {date:-1}}",
+            "{$sort: {date: 1}}",
             """
                     {$group: {
                                 _id: '$symbol',
