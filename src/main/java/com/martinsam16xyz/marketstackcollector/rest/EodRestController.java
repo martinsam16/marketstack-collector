@@ -1,6 +1,7 @@
 package com.martinsam16xyz.marketstackcollector.rest;
 
 import com.martinsam16xyz.marketstackcollector.repository.EodRepository;
+import com.martinsam16xyz.marketstackcollector.repository.dto.SerieDto;
 import com.martinsam16xyz.marketstackcollector.repository.model.Eod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -42,6 +43,11 @@ public class EodRestController {
         }
         return eodRepository.findAllByIdNotNull(pageable);
 
+    }
+
+    @GetMapping("/historical")
+    public Flux<SerieDto> historicalData() {
+        return eodRepository.getHistoricalData();
     }
 
 }
