@@ -38,7 +38,11 @@ public interface EodRepository extends ReactiveMongoRepository<Eod, String> {
                                 historical: {
                                     $push: {
                                         date: '$date',
-                                        close: '$close'
+                                        open: '$open',
+                                        close: '$close',
+                                        min: '$low',
+                                        max: '$high',
+                                        volume: '$volume'
                                     }
                     }}}""",
             """
